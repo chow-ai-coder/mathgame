@@ -1,28 +1,22 @@
-// server.cjs
 const express = require('express');
 const path = require('path');
+const apiRouter = require('./api.ts').default; // Note the `.default` to handle the default export
 
 const app = express();
+
+// Use the PORT environment variable provided by Cloud Run,
+// or default to 8080 for local development.
 const port = process.env.PORT || 8080;
 
-// Absolute path to the built client
-const distDir = path.join(__dirname, 'dist');
+app.use(express.json());
 
-// Lightweight health check so Cloud Run can confirm we're up
-app.get('/healthz', (_req, res) => res.status(200).send('ok'));
+// Serve static files from the 'dist' directory
+app.use(express.static(path.join(__dirname, 'dist')));
 
-// Serve static assets from /dist (don't auto-serve index.html here)
-app.use(express.static(distDir, {
-  index: false,            // important: let the catch-all send index.html
-  maxAge: '1h',            // optional: cache static files
-}));
+// Mount the API router
+app.use('/api', apiRouter);
 
-// ✅ Express 5 catch-all (use a regex, not '*')
-app.get('(.*)', (_req, res) => {
-  res.sendFile(path.join(distDir, 'index.html'));
-});
-
-// Bind to 0.0.0.0 so Cloud Run can reach the container
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Server listening on http://0.0.0.0:${port}`);
+// Start the server and listen on the correct port
+app.listen(port, () => {
+  console.log(`Server is listening on port ${port}`);
 });
