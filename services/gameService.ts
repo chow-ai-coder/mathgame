@@ -11,7 +11,7 @@ export const getPlayers = (): Player[] => {
     return data ? JSON.parse(data) : [];
   } catch (error) {
     console.error("Failed to parse players from localStorage", error);
-    localStorage.removeItem(PLAYBOARD_KEY); // Clear corrupted data
+    localStorage.removeItem(PLAYERS_KEY); // Clear corrupted data
     return [];
   }
 };
@@ -153,6 +153,7 @@ export const generateQuestion = (level: number, forceOperation?: Operation): { q
             num1 = getRandomInt(10, 20);
             num2 = getRandomInt(1, 10);
             answer = num1 + num2;
+            text = `${num1} + ${num2}`;
             operation = Operation.Addition;
     }
 
@@ -181,11 +182,12 @@ export const getAnalysisAndSuggestions = async (mistakes: Mistake[], playerLevel
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
+      throw new Error(`Server error: ${response.statusText}`);
     }
 
     const data = await response.json();
     return data.suggestions;
+
   } catch (error) {
     console.error("Error fetching AI suggestions:", error);
     return "Sorry, I couldn't generate suggestions at this time. Keep practicing, you're doing great!";
