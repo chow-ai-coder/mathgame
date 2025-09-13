@@ -11,4 +11,4 @@ WORKDIR /app
 COPY --from=builder /app /app
 RUN npm install express
 EXPOSE 8080
-CMD ["node", "server.js"]
+CMD ["node", "server.cjs"]
