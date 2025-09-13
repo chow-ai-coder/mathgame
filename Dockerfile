@@ -1,22 +1,37 @@
-# Step 1: Build the app
-FROM node:18 AS builder
+# Use a newer version of Node.js for the build stage.
+FROM node:20 AS builder
+
 WORKDIR /app
+
 COPY package*.json ./
+
 RUN npm install
+
+# Copy all other files to the app directory.
 COPY . .
+
+# Build the app.
 RUN npm run build
 
-# Step 2: Serve the app
-FROM node:18
+# Use a lean base image for the runtime stage to keep the container small.
+FROM node:20
+
 WORKDIR /app
 
-# copy only dist and server
+# Copy only the necessary build artifacts and server file from the build stage.
 COPY --from=builder /app/dist ./dist
-COPY server.cjs ./server.cjs
-COPY package*.json ./
+COPY --from=builder /app/server.cjs ./server.cjs
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/api.ts ./api.ts
+COPY --from=builder /app/services/gameService.ts ./services/gameService.ts
+COPY --from=builder /app/constants.ts ./constants.ts
+COPY --from=builder /app/types.ts ./types.ts
 
-# install only express
-RUN npm install express
+# Install only production dependencies for the final image.
+RUN npm install express @google/generative-ai
 
+# Expose the port on which the app will run.
 EXPOSE 8080
+
+# Define the command to run the app.
 CMD ["node", "server.cjs"]
