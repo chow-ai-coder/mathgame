@@ -1,6 +1,6 @@
 const express = require('express');
 const path = require('path');
-const apiRouter = require('./api.ts').default; 
+const apiRouter = require('./backend/api.js').default;
 
 const app = express();
 
@@ -15,5 +15,5 @@ app.use(express.static(path.join(__dirname, 'dist')));
 app.use('/api', apiRouter);
 
 app.listen(port, () => {
-    console.log(`Server is listening on port ${port}`);
+console.log(Server is listening on port ${port});
 });

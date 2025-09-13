@@ -1,37 +1,43 @@
-# Use a newer version of Node.js for the build stage.
+# Stage 1: Build the frontend and backend
 FROM node:20 AS builder
 
+# Set the working directory
 WORKDIR /app
 
+# Copy package.json and package-lock.json
 COPY package*.json ./
 
+# Install dependencies
 RUN npm install
 
-# Copy all other files to the app directory.
+# Copy source code
 COPY . .
 
-# Build the app.
+# Build the frontend assets
 RUN npm run build
 
-# Use a lean base image for the runtime stage to keep the container small.
+# Transpile the backend TypeScript files to JavaScript
+RUN npm install -g typescript
+RUN tsc --outDir dist/backend ./api.ts ./services/gameService.ts ./constants.ts ./types.ts
+
+# Stage 2: Create the final production image
 FROM node:20
 
+# Set the working directory
 WORKDIR /app
 
-# Copy only the necessary build artifacts and server file from the build stage.
+# Copy the built frontend assets from the builder stage
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/server.cjs ./server.cjs
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/api.ts ./api.ts
-COPY --from=builder /app/services/gameService.ts ./services/gameService.ts
-COPY --from=builder /app/constants.ts ./constants.ts
-COPY --from=builder /app/types.ts ./types.ts
 
-# Install only production dependencies for the final image.
+# Copy the transpiled backend JavaScript files from the builder stage
+COPY --from=builder /app/dist/backend ./backend
+COPY --from=builder /app/server.cjs ./
+
+# Install only the production dependencies
 RUN npm install express @google/generative-ai
 
-# Expose the port on which the app will run.
+# Expose the port the app runs on
 EXPOSE 8080
 
-# Define the command to run the app.
+# Run the server
 CMD ["node", "server.cjs"]
